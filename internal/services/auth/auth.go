@@ -36,6 +36,8 @@ type AppProvider interface {
 
 var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrInvalidUserID      = errors.New("invalid user ID")
+	ErrInvalidAppID       = errors.New("invalid app ID")
 )
 
 func New(userSaver UserSaver, userProvider UserProvider, appProvider AppProvider, tokenTTL time.Duration) *Auth {
@@ -52,6 +54,10 @@ func (a *Auth) Login(ctx context.Context, email string, password string, appID i
 		if errors.Is(err, storage.ErrUserNotFound) {
 			log.Warn("user not found", zap.Error(err))
 			return "", fmt.Errorf("Login failed: %w", ErrInvalidCredentials)
+		}
+		if errors.Is(err, storage.ErrAppNotFound) {
+			log.Warn("app not found", zap.Error(err))
+			return "", fmt.Errorf("Login failed: %w", ErrInvalidAppID)
 		}
 
 		log.Error("failed to get user", zap.Error(err))
@@ -89,6 +95,10 @@ func (a *Auth) Register(ctx context.Context, email string, password string) (int
 	log.Info("registering user")
 	passHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
+		if errors.Is(err, storage.ErrUserExists) {
+			log.Warn("user already exists", zap.Error(err))
+			return 0, fmt.Errorf("Register failed: %w", ErrInvalidCredentials)
+		}
 		log.Error("failed to generate password hash", zap.Error(err))
 		return 0, err
 	}
@@ -112,6 +122,10 @@ func (a *Auth) IsAdmin(ctx context.Context, userID int64) (bool, error) {
 
 	isAdmin, err := a.userProvider.IsAdmin(ctx, userID)
 	if err != nil {
+		if errors.Is(err, storage.ErrUserNotFound) {
+			log.Warn("user not found", zap.Error(err))
+			return false, fmt.Errorf("IsAdmin failed: %w", ErrInvalidUserID)
+		}
 		log.Error("failed to check if user is an admin", zap.Error(err))
 		return false, fmt.Errorf("failed to check if user is an admin: %w", err)
 	}
