@@ -55,10 +55,6 @@ func (a *Auth) Login(ctx context.Context, email string, password string, appID i
 			log.Warn("user not found", zap.Error(err))
 			return "", fmt.Errorf("Login failed: %w", ErrInvalidCredentials)
 		}
-		if errors.Is(err, storage.ErrAppNotFound) {
-			log.Warn("app not found", zap.Error(err))
-			return "", fmt.Errorf("Login failed: %w", ErrInvalidAppID)
-		}
 
 		log.Error("failed to get user", zap.Error(err))
 		return "", err
@@ -73,7 +69,7 @@ func (a *Auth) Login(ctx context.Context, email string, password string, appID i
 	app, err := a.appProvider.App(ctx, appID)
 	if err != nil {
 		log.Warn("application not found", zap.Int("id", appID))
-		return "", fmt.Errorf("Application not found: %w", err)
+		return "", fmt.Errorf("application not found: %w", ErrInvalidAppID)
 	}
 
 	log.Info("login successful")

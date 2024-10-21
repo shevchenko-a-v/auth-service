@@ -19,9 +19,7 @@ func main() {
 
 	application := app.New(config.GRPC.Port, config.StoragePath, config.TokenTTL)
 	go application.GRPCApp.Run()
-	// if err := application.GRPCApp.Run(); err != nil {
-	// 	logger.Logger.Error("grpc application failed", zap.Error(err))
-	// }
+
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
 
