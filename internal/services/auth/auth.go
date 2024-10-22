@@ -91,16 +91,16 @@ func (a *Auth) Register(ctx context.Context, email string, password string) (int
 	log.Info("registering user")
 	passHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		if errors.Is(err, storage.ErrUserExists) {
-			log.Warn("user already exists", zap.Error(err))
-			return 0, fmt.Errorf("Register failed: %w", ErrInvalidCredentials)
-		}
 		log.Error("failed to generate password hash", zap.Error(err))
 		return 0, err
 	}
 
 	id, err := a.userSaver.SaveUser(ctx, email, passHash)
 	if err != nil {
+		if errors.Is(err, storage.ErrUserExists) {
+			log.Warn("user already exists", zap.Error(err))
+			return 0, fmt.Errorf("Register failed: %w", ErrInvalidCredentials)
+		}
 		log.Error("failed to save user", zap.Error(err))
 		return 0, err
 	}
